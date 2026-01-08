@@ -1,0 +1,23 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venvs/
+pytorch_gpu_py313/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# System files
+.DS_Store
+*.swp
+*~
+
+# PyTorch / CUDA temporary files
+*.pt
+*.pth
+
+# Logs and temporary outputs
+*.log
+output/
