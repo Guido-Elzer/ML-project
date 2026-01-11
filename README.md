@@ -10,7 +10,9 @@ Snellius uses environment modules instead of global software installations.
 Before working on this project, load the required module stack:
 
 ```bash
+cd ~/ML-project
 module purge
 module load 2025
 module load Python/3.13.1-GCCcore-14.2.0
 module load matplotlib/3.10.3-gfbf-2025a
+source ~/venv_mlops_2026/bin/activate
