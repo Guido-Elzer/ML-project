@@ -1,0 +1,217 @@
+
+OpenSSH_9.6p1 Ubuntu-3ubuntu13.11, OpenSSL 3.0.13 30 Jan 2024
+
+
+module purge
+module load 2025
+module load Python/3.13.1-GCCcore-14.2.0
+module load matplotlib/3.10.3-gfbf-2025a
+
+python -m venv ~/venvs/pytorch_gpu_py313
+source ~/venvs/pytorch_gpu_py313/bin/activate
+
+pip install --upgrade pip
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+
+Full path
+
+/home/scur2290/venvs/pytorch_gpu_py313
+4.3G    /home/scur2290/venvs/pytorch_gpu_py313
+I forgot to time the installation precisely, but it took about 2-3 minutes
+pip suggested upgrading (resolved with pip install --upgrade pip
+ERROR: No matching distribution found for torchaudio
+
+PyTorch: 2.5.1+cu121
+CUDA available: False
+
+08/01/2026, 17:26
+Which is expected because there is no gpu available
+
+
+https://github.com/Guido-Elzer/ML-project
+GitHub
+Guido-Elzer/ML-project
+Contribute to Guido-Elzer/ML-project development by creating an account on GitHub.
+Contribute to Guido-Elzer/ML-project development by creating an account on GitHub.
+
+error: src refspec main does not match any error: failed to push some refs to 'github.com:Guido-Elzer/ML-project.git'
+
+
+README FILE:
+
+
+
+ML Project
+This repository contains a machine learning project developed on the Snellius HPC cluster.
+The project uses Python, Matplotlib, and PyTorch with CUDA support installed via a virtual
+environment combined with environment modules.
+
+---
+
+Environment setup (Snellius)
+Snellius uses environment modules instead of global software installations.
+Before working on this project, load the required module stack:
+
+```bash
+module purge
+module load 2025
+module load Python/3.13.1-GCCcore-14.2.0
+module load matplotlib/3.10.3-gfbf-2025a
+Output of -oneline
+4c06d3c (HEAD -> main, origin/main) Initial commit with README and .gitignore
+Question 4:
+ 
+sbatch: error: Batch job submission failed: Invalid partition name specified
+Error during job submission
+Zane
+ — 
+10/01/2026, 16:52
+Fixed it by looking at the sinfo list
+Job ID of sbatch test: 18227903
+26 seconds waiting time 
+
+
+
+JobID                      Start                 End    Elapsed      State 
+------------ ------------------- ------------------- ---------- ---------- 
+18227903     2026-01-10T16:52:40 2026-01-10T16:53:06   00:00:26  COMPLETED 
+18227903.ba+ 2026-01-10T16:52:40 2026-01-10T16:53:06   00:00:26  COMPLETED 
+18227903.ex+ 2026-01-10T16:52:40 2026-01-10T16:53:06   00:00:26  COMPLETED
+Scripts 
+#!/bin/bash
+#SBATCH --job-name=test_pytorch_job
+#SBATCH --output=job_output.txt
+#SBATCH --error=job_error.txt
+#SBATCH --time=00:05:00
+#SBATCH --partition=rome
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=1
+
+module purge
+module load 2025
+module load Python/3.13.1-GCCcore-14.2.0
+module load matplotlib/3.10.3-gfbf-2025a
+
+source ~/venvs/pytorch_gpu_py313/bin/activate
+
+python test_job.py
+
+Python script:
+import torch
+import matplotlib.pyplot as plt
+
+print("Hello from Slurm!")
+print(f"PyTorch version: {torch.version}")
+print(f"CUDA available: {torch.cuda.is_available()}")
+
+plt.plot([1,2,3],[4,5,6])
+plt.title("Test Plot")
+plt.savefig("test_plot.png")
+sbatch test_job.sh
+Zane
+ — 
+
+File content of cat job_output.txt cat job_error.txt:
+Job started
+PyTorch version: 2.5.1+cu121
+CUDA available: False
+Job finished
+
+
+
+Why would storing many files be a bad thing:
+Because snellius operates on a I/O way which means that instead of filesize it looks at the number of operations
+
+Using a dataset loader, or storing them in hdf5 files works.
+
+Use DVC (data version control) so the changing data can be stored in the cloud
+
+2:
+Models are trained with random weights, which causes the results to differ each time theyre reran. For this you can use "set seeds" that are documented so it can be done again using same results.
+
+Sometimes gpu's are nondeterministic (which means that the same result wont happen with the same imputs), to combat this you can use torch to enable deterministic algorithms.
+
+Different versions of software. Just use the same venv with the same things on it, and it should be fine.
+
+3:
+Astral uv is managed by Snellius, so it is stable and integrates with modules, but you can't freely install the latest packages. 
+
+Python venv is lightweight and user-controlled, works well with modules, and lets you install what you need, but you have to manually manage dependencies. 
+
+Conda is easy for packages and has a large ecosystem, but it conflicts with modules, is slow, and is discouraged on Snellius.
+
+
+
+
+
+Did you encounter a ModuleNotFoundError when first running the import test:
+Yes, at first I got ModuleNotFoundError: No module named 'ml_core.data.pcam' and later for ml_core.utils.utils.
+This happened because the dummy files pcam.py, example_model.py, solver.py, and utils.py did not exist. Also, the PYTHONPATH was not set to include src, so Python couldn’t find the ml_core package.
+
+Why import from ml_core.data instead of ml_core.data.pcam:
+It’s better practice because it abstracts the internal structure of the package. If later the file pcam.py changes or is refactored, other code doesn’t need to change—everything just imports from ml_core.data.
+
+Running pytest tests/test_imports.py:
+Initially the test failed because the files didn’t exist or had syntax errors. After creating the missing files (pcam.py, example_model.py, solver.py, utils.py) and setting proper exports in each init.py, and exporting PYTHONPATH=$PWD/src:$PYTHONPATH, the test passed successfully:
+
+collected 1 item
+.
+
+
+
+
+Question 7:
+Answers:
+
+    getitem implementation
+
+The image is loaded lazily from the HDF5 file using h5py.
+Values are clipped to [0, 255], cast to uint8, and converted to a PyTorch tensor.
+The tensor is permuted to (C, H, W) and the label is squeezed to 1D.
+
+    pytest results
+
+All tests passed on Snellius.
+Initially, tests failed due to missing packages and mismatched function signatures.
+This was fixed by installing the correct dependencies and updating the dataset and loader code.
+
+    CI results
+
+The GitHub Actions pipeline successfully ran the data tests.
+Local and CI differences can occur due to environment mismatches or dependency versions.
+
+    WeightedRandomSampler effect
+
+With batch size 32:
+
+    Without sampler: ~6 positive samples
+
+With sampler: ~16 positive samplesThis significantly improves class balance during training.
+
+    EDA
+
+The EDA plots showed class imbalance, extreme pixel values, and corrupted images.
+This justified numerical clipping, filtering, and weighted sampling.
+
+
+
+
+Question 8
+1: Forward pass error initially:
+When I first tried the forward pass, I got a RuntimeError about mat1 and mat2 shapes not matching (8x27648 vs 9216x64).
+This happened because the input wasn’t flattened. The input shape is (3, 96, 96), so the flattened size is 39696 = 27648.
+The first Linear layer needs nn.Linear(27648, hidden_units[0]).
+
+2: Why test backprop explicitly:
+Checking that loss is a number isn’t enough.
+Weights could fail to update if the computational graph is broken, and the model wouldn’t actually learn.
+The test_backprop ensures that after loss.backward() and optimizer.step(), weights actually change, confirming the model can learn.
+============================= test session starts ==============================
+platform linux -- Python 3.13.1, pytest-8.3.5, pluggy-1.5.0
+rootdir: /gpfs/home4/scur2290/ML-project
+plugins: xdist-3.6.1
+collected 2 items
+
+tests/test_model_shapes.py ..                                            [100%]
+
+============================== 2 passed in 9.91s ===============================
